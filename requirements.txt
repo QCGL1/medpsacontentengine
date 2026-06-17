@@ -1,0 +1,8 @@
+# Med Spa Content Engine — Python dependencies
+# Pin majors to keep Sahil's local env and the GitHub Actions runner identical.
+
+anthropic>=0.40,<1.0       # concept ideation, captions, learnings analysis
+requests>=2.31,<3.0        # Meta Graph API + Runway REST calls
+python-dotenv>=1.0,<2.0    # load local .env in dev (Actions uses Secrets instead)
+tenacity>=8.2,<9.0         # retry/backoff for posting + generation
+Pillow>=10.0               # local image sanity checks / resizing

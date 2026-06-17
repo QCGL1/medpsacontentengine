@@ -1,0 +1,23 @@
+name: daily_post
+# Weekdays 10am ET (14:00 UTC) — publish one approved item to IG + FB.
+on:
+  schedule:
+    - cron: "0 14 * * 1-5"
+  workflow_dispatch: {}
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Publish
+        env:
+          DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_IG_ACCOUNT_ID: ${{ secrets.META_IG_ACCOUNT_ID }}
+        run: python -m src.post
