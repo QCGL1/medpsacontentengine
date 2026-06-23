@@ -1,0 +1,28 @@
+name: weekly_generate
+# Sundays 9am ET (13:00 UTC) — generate next week's 7 concepts + images.
+on:
+  schedule:
+    - cron: "0 13 * * 0"
+  workflow_dispatch: {}   # lets Sahil run it manually for testing
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Generate concepts
+        env:
+          # Provided by Prateek via repo Secrets. Until then, runs in DRY_RUN.
+          DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUNWAY_API_KEY: ${{ secrets.RUNWAY_API_KEY }}
+        run: python -m src.generate
+      - name: Save queue artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-queue
+          path: content_queue/

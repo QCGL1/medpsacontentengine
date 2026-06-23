@@ -1,0 +1,29 @@
+name: weekly_analyze
+# Fridays 6pm ET (22:00 UTC) — pull metrics, score, update learnings.md.
+on:
+  schedule:
+    - cron: "0 22 * * 5"
+  workflow_dispatch: {}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Analyze + update learnings
+        env:
+          DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m src.analyze
+      - name: Commit updated learnings
+        run: |
+          git config user.name "content-engine-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add src/learnings.md
+          git commit -m "chore: weekly learnings update" || echo "no changes"
+          git push || echo "nothing to push (dry-run)"

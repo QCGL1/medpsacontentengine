@@ -1,0 +1,9 @@
+Pillar:  Get Booked
+Hook:    Your calendar gap isn't a traffic problem—it's a visibility one.
+Slug:    2026-06-23_post1_get-booked
+Date:    2026-06-23
+
+HOW TO POST:
+1. Open caption_instagram.txt — copy the text
+2. Open Instagram, create new post, paste caption, attach image
+3. Repeat for Facebook using caption_facebook.txt

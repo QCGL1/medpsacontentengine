@@ -1,0 +1,23 @@
+# Secrets — NEVER commit these
+.env
+*.env
+!.env.example
+
+# Generated assets (regenerated each week; don't bloat the repo)
+content_queue/*
+!content_queue/.gitkeep
+archive/*
+!archive/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
