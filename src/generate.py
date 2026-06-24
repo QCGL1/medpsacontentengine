@@ -7,7 +7,7 @@ Reads learnings.md + pillar rotation -> Anthropic drafts N concepts
 Run: python -m src.generate
 """
 from __future__ import annotations
-import json, logging, time
+import json, logging, re, time
 from datetime import date
 from pathlib import Path
 import requests
@@ -42,24 +42,46 @@ def draft_concept(pillar: str, learnings: str) -> dict:
         }
     client = anthropic.Anthropic(api_key=CFG.anthropic_api_key)
     prompt = build_caption_prompt(pillar, learnings)
-    msg = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=600,
-        system=SYSTEM,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    raw = msg.content[0].text.strip()
-    # Strip markdown code fences if present
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    concept = json.loads(raw.strip())
-    concept["pillar"] = pillar
-    if "image_prompt" not in concept:
-        concept["image_prompt"] = build_image_prompt(pillar)
-    log.info("Drafted concept for pillar: %s | hook: %s", pillar, concept.get("hook", ""))
-    return concept
+    for attempt in range(3):
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            system=SYSTEM,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = msg.content[0].text.strip()
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        raw = raw.strip()
+        try:
+            concept = json.loads(raw)
+        except json.JSONDecodeError:
+            # Extract the first {...} block as fallback
+            m = re.search(r'\{.*\}', raw, re.DOTALL)
+            if m:
+                try:
+                    concept = json.loads(m.group())
+                except json.JSONDecodeError:
+                    if attempt < 2:
+                        log.warning("JSON parse failed (attempt %d), retrying...", attempt + 1)
+                        time.sleep(2)
+                        continue
+                    raise
+            elif attempt < 2:
+                log.warning("No JSON found (attempt %d), retrying...", attempt + 1)
+                time.sleep(2)
+                continue
+            else:
+                raise
+        concept["pillar"] = pillar
+        if "image_prompt" not in concept:
+            concept["image_prompt"] = build_image_prompt(pillar)
+        log.info("Drafted concept for pillar: %s | hook: %s", pillar, concept.get("hook", ""))
+        return concept
+    raise RuntimeError(f"Failed to draft concept for pillar: {pillar}")
 
 
 def _runway_poll(task_id: str, timeout: int = 120) -> str:
